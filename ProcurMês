@@ -1,0 +1,691 @@
+Attribute VB_Name = "Módulo1"
+
+
+
+Public Sub ProcuraMes()
+
+Dim WDMAE, WSEMAE, WSAMAE, WCORSAN, WSABESP, WCOMUSA As Worksheet
+Dim UltcelWDMAE, UltColWDMAE, UltcelWSEMAE, UltColWSEMAE, UltcelWSAMAE, UltColWSAMAE, UltcelWCORSAN, UltColWCORSAN, UltcelWSABESP, UltColWSABESP, UltcelWCOMUSA, UltColWCOMUSA, ProcTxt As Range
+Dim NomeLoja, Data, DataEmissao, DataLeitura, DataVencimento, DataLeituraAnterior As String
+Dim LeituraAtual, LeituraAnterior, AguaRS, EsgotoRS, DiversosRS, PrecoBasico, ServBasicoAgua, ServBasicoEsgoto, ServADM, ConsumoM3 As Variant
+
+Dim valororigem As String
+Dim wsa As Workbook
+Dim wsb As Worksheet
+
+'Variaveis aplicadas somente a Corsan
+Dim COM1, COM, IND, ECOCOM1, ECOCOM, ECOIND, SBCOM1, SBCOM, SBIND, SBECOM1, _
+SBECOM, SBEIND, DESCAGUA, DESCESGOTO, DESCSB, COM1RS, COMRS, INDRS, ECOM1RS, ECOMRS, EINDRS As Double
+
+    'Inicializa as planilhas
+    
+        Set WDMAE = ThisWorkbook.Sheets("DMAE")
+        Set WSEMAE = ThisWorkbook.Sheets("SEMAE")
+        Set WSAMAE = ThisWorkbook.Sheets("SAMAE")
+        Set WCORSAN = ThisWorkbook.Sheets("CORSAN")
+        Set WSABESP = ThisWorkbook.Sheets("SABESP")
+        Set WCOMUSA = ThisWorkbook.Sheets("COMUSA")
+ 
+    'Busca a Ultima linha e Coluna
+ 
+        Set UltcelWDMAE = WDMAE.Cells(WDMAE.Rows.Count, 1).End(xlUp)
+        Set UltColWDMAE = WDMAE.Cells(8, WDMAE.Columns.Count).End(xlToLeft)
+        
+        Set UltcelWSEMAE = WSEMAE.Cells(WSEMAE.Rows.Count, 1).End(xlUp)
+        Set UltColWSEMAE = WSEMAE.Cells(8, WSEMAE.Columns.Count).End(xlToLeft)
+        
+        Set UltcelWSAMAE = WSAMAE.Cells(WSAMAE.Rows.Count, 1).End(xlUp)
+        Set UltColWSAMAE = WSAMAE.Cells(8, WSAMAE.Columns.Count).End(xlToLeft)
+        
+        Set UltcelWCORSAN = WCORSAN.Cells(WCORSAN.Rows.Count, 1).End(xlUp)
+        Set UltColWCORSAN = WCORSAN.Cells(8, WCORSAN.Columns.Count).End(xlToLeft)
+        
+        Set UltcelWSABESP = WSABESP.Cells(WSABESP.Rows.Count, 1).End(xlUp)
+        Set UltColWSABESP = WSABESP.Cells(8, WSABESP.Columns.Count).End(xlToLeft)
+        
+        Set UltcelWCOMUSA = WCOMUSA.Cells(WCOMUSA.Rows.Count, 1).End(xlUp)
+        Set UltColWCOMUSA = WCOMUSA.Cells(8, WCOMUSA.Columns.Count).End(xlToLeft)
+    
+    'Abre a pasta R3
+    
+        valororigem = "C:\Users\01282403\Desktop\TESTES\Consumo água geral cia Zaffari_R03_vs2.xlsm" 'aqui troque pelo caminho do seu arquivo
+        Workbooks.Open Filename:=valororigem
+        Set wsa = Workbooks.Open(valororigem)
+        Set wsb = wsa.Worksheets("Capa")
+        Data = wsb.Range("s24").Value
+        NomeLoja = wsb.Range("U23")
+        DataEmissao = wsb.Range("Q38")
+        DataLeitura = wsb.Range("Q39")
+        DataVencimento = wsb.Range("Q40")
+        DataLeituraAnterior = wsb.Range("Q46")
+        LeituraAtual = wsb.Range("Q41")
+        LeituraAnterior = wsb.Range("Q42")
+        AguaRS = wsb.Range("Q30")
+        EsgotoRS = wsb.Range("Q31")
+        DiversosRS = wsb.Cells(45, 17)
+        ServBasicoAgua = wsb.Range("Q43")
+        ServBasicoEsgoto = wsb.Range("Q44")
+        ConsumoM3 = wsb.Range("Q26")
+        ServADM = wsb.Range("Q36")
+        PrecoBasico = wsb.Range("Q29")
+        
+        
+        'Consumo água M³
+        
+        COM1 = wsb.Range("U26")
+        COM = wsb.Range("U27")
+        IND = wsb.Range("U28")
+        
+        'Consumo Esgoto M³
+        
+        ECOCOM1 = wsb.Range("U30")
+        ECOCOM = wsb.Range("U31")
+        ECOIND = wsb.Range("U32")
+        
+        'Serviço Básico
+        
+        SBCOM1 = wsb.Range("U34")
+        SBCOM = wsb.Range("U35")
+        SBIND = wsb.Range("U36")
+        SBECOM1 = wsb.Range("U37")
+        SBECOM = wsb.Range("U38")
+        SBEIND = wsb.Range("U39")
+        
+        'Valores de consumo R$
+        
+        COM1RS = wsb.Range("U41")
+        COMRS = wsb.Range("U42")
+        INDRS = wsb.Range("U43")
+        ECOM1RS = wsb.Range("U44")
+        ECOMRS = wsb.Range("U45")
+        EINDRS = wsb.Range("U46")
+        
+        'Descontos
+        
+        DESCAGUA = wsb.Range("U48")
+        DESCESGOTO = wsb.Range("U49")
+        DESCSB = wsb.Range("U50")
+        
+        
+              
+If wsb.Range("U22") = "DMAE" Then
+
+        WDMAE.Activate
+        WDMAE.Range("A8").Activate
+        WDMAE.Range("A8").Select
+   'Cadastra dados da R3 no controle de dados
+   
+     If WDMAE.Range("A8") <> "" Then
+       
+            Set ProcTxt = WDMAE.Range("A:A").Find(NomeLoja)
+            
+            If Not ProcTxt Is Nothing Then
+               
+                Set UltcelWDMAE = WDMAE.Cells(WDMAE.Rows.Count, 2).End(xlUp)
+                
+                Do While ActiveCell.Column <= UltColWDMAE.Column
+                    
+                        If WDMAE.Cells(8, ActiveCell.Column).Value = Data Then
+                        
+                                'Insere dados nas lojas com uma fonte alternativa
+                                If NomeLoja = "LJ 05 - CenterLar" Then
+                            
+                                    WDMAE.Cells(ProcTxt.Row + 4, ActiveCell.Column) = CDate(Format(DataEmissao, "dd/MM/yyyy"))
+                                    WDMAE.Cells(ProcTxt.Row + 5, ActiveCell.Column) = CDate(Format(DataLeitura, "dd/MM/yyyy"))
+                                    WDMAE.Cells(ProcTxt.Row + 6, ActiveCell.Column) = CDate(Format(DataVencimento, "dd/MM/yyyy"))
+                                    WDMAE.Cells(ProcTxt.Row + 7, ActiveCell.Column) = LeituraAtual
+                                    WDMAE.Cells(ProcTxt.Row + 8, ActiveCell.Column) = LeituraAnterior
+                                    WDMAE.Cells(ProcTxt.Row + 16, ActiveCell.Column) = DiversosRS
+                                    WDMAE.Cells(ProcTxt.Row + 17, ActiveCell.Column) = AguaRS
+                                    WDMAE.Cells(ProcTxt.Row + 18, ActiveCell.Column) = EsgotoRS
+                                Else
+                                    If NomeLoja = "LJ 06 - Z. Bordini" Then
+                                        
+                                        WDMAE.Cells(ProcTxt.Row + 4, ActiveCell.Column) = CDate(Format(DataEmissao, "dd/MM/yyyy"))
+                                        WDMAE.Cells(ProcTxt.Row + 5, ActiveCell.Column) = CDate(Format(DataLeitura, "dd/MM/yyyy"))
+                                        WDMAE.Cells(ProcTxt.Row + 6, ActiveCell.Column) = CDate(Format(DataVencimento, "dd/MM/yyyy"))
+                                        WDMAE.Cells(ProcTxt.Row + 7, ActiveCell.Column) = LeituraAtual
+                                        WDMAE.Cells(ProcTxt.Row + 8, ActiveCell.Column) = LeituraAnterior
+                                        WDMAE.Cells(ProcTxt.Row + 16, ActiveCell.Column) = DiversosRS
+                                        WDMAE.Cells(ProcTxt.Row + 17, ActiveCell.Column) = AguaRS
+                                        WDMAE.Cells(ProcTxt.Row + 18, ActiveCell.Column) = EsgotoRS
+                                        
+                                    Else
+                                        
+                                        If NomeLoja = "LJ 08 - Z. Ipiranga" Then
+                                            
+                                            WDMAE.Cells(ProcTxt.Row + 4, ActiveCell.Column) = CDate(Format(DataEmissao, "dd/MM/yyyy"))
+                                            WDMAE.Cells(ProcTxt.Row + 5, ActiveCell.Column) = CDate(Format(DataLeitura, "dd/MM/yyyy"))
+                                            WDMAE.Cells(ProcTxt.Row + 6, ActiveCell.Column) = CDate(Format(DataVencimento, "dd/MM/yyyy"))
+                                            WDMAE.Cells(ProcTxt.Row + 7, ActiveCell.Column) = LeituraAtual
+                                            WDMAE.Cells(ProcTxt.Row + 8, ActiveCell.Column) = LeituraAnterior
+                                            WDMAE.Cells(ProcTxt.Row + 16, ActiveCell.Column) = DiversosRS
+                                            WDMAE.Cells(ProcTxt.Row + 17, ActiveCell.Column) = AguaRS
+                                            WDMAE.Cells(ProcTxt.Row + 18, ActiveCell.Column) = EsgotoRS
+                                            
+                                        Else
+                                            If NomeLoja = "LJ 16 - Z. Cristóvão Colombo" Then
+                                                
+                                                WDMAE.Cells(ProcTxt.Row + 4, ActiveCell.Column) = CDate(Format(DataEmissao, "dd/MM/yyyy"))
+                                                WDMAE.Cells(ProcTxt.Row + 5, ActiveCell.Column) = CDate(Format(DataLeitura, "dd/MM/yyyy"))
+                                                WDMAE.Cells(ProcTxt.Row + 6, ActiveCell.Column) = CDate(Format(DataVencimento, "dd/MM/yyyy"))
+                                                WDMAE.Cells(ProcTxt.Row + 7, ActiveCell.Column) = LeituraAtual
+                                                WDMAE.Cells(ProcTxt.Row + 8, ActiveCell.Column) = LeituraAnterior
+                                                WDMAE.Cells(ProcTxt.Row + 16, ActiveCell.Column) = DiversosRS
+                                                WDMAE.Cells(ProcTxt.Row + 17, ActiveCell.Column) = AguaRS
+                                                WDMAE.Cells(ProcTxt.Row + 18, ActiveCell.Column) = EsgotoRS
+                                                
+                                            Else
+                                                If NomeLoja = "LJ 17 - Z. Cavalhada" Then
+                                                    
+                                                    WDMAE.Cells(ProcTxt.Row + 4, ActiveCell.Column) = CDate(Format(DataEmissao, "dd/MM/yyyy"))
+                                                    WDMAE.Cells(ProcTxt.Row + 5, ActiveCell.Column) = CDate(Format(DataLeitura, "dd/MM/yyyy"))
+                                                    WDMAE.Cells(ProcTxt.Row + 6, ActiveCell.Column) = CDate(Format(DataVencimento, "dd/MM/yyyy"))
+                                                    WDMAE.Cells(ProcTxt.Row + 7, ActiveCell.Column) = LeituraAtual
+                                                    WDMAE.Cells(ProcTxt.Row + 8, ActiveCell.Column) = LeituraAnterior
+                                                    WDMAE.Cells(ProcTxt.Row + 16, ActiveCell.Column) = DiversosRS
+                                                    WDMAE.Cells(ProcTxt.Row + 17, ActiveCell.Column) = AguaRS
+                                                    WDMAE.Cells(ProcTxt.Row + 18, ActiveCell.Column) = EsgotoRS
+                                                    
+                                                Else
+                                                    If NomeLoja = "LJ 19 - Z. Menino Deus" Then
+                                                        
+                                                        WDMAE.Cells(ProcTxt.Row + 4, ActiveCell.Column) = CDate(Format(DataEmissao, "dd/MM/yyyy"))
+                                                        WDMAE.Cells(ProcTxt.Row + 5, ActiveCell.Column) = CDate(Format(DataLeitura, "dd/MM/yyyy"))
+                                                        WDMAE.Cells(ProcTxt.Row + 6, ActiveCell.Column) = CDate(Format(DataVencimento, "dd/MM/yyyy"))
+                                                        WDMAE.Cells(ProcTxt.Row + 7, ActiveCell.Column) = LeituraAtual
+                                                        WDMAE.Cells(ProcTxt.Row + 8, ActiveCell.Column) = LeituraAnterior
+                                                        WDMAE.Cells(ProcTxt.Row + 16, ActiveCell.Column) = DiversosRS
+                                                        WDMAE.Cells(ProcTxt.Row + 17, ActiveCell.Column) = AguaRS
+                                                        WDMAE.Cells(ProcTxt.Row + 18, ActiveCell.Column) = EsgotoRS
+                                                        
+                                                    Else
+                                                        If NomeLoja = "LJ 22 - BS  Ipiranga" Then
+                                                        
+                                                            WDMAE.Cells(ProcTxt.Row + 4, ActiveCell.Column) = CDate(Format(DataEmissao, "dd/MM/yyyy"))
+                                                            WDMAE.Cells(ProcTxt.Row + 5, ActiveCell.Column) = CDate(Format(DataLeitura, "dd/MM/yyyy"))
+                                                            WDMAE.Cells(ProcTxt.Row + 6, ActiveCell.Column) = CDate(Format(DataVencimento, "dd/MM/yyyy"))
+                                                            WDMAE.Cells(ProcTxt.Row + 7, ActiveCell.Column) = LeituraAtual
+                                                            WDMAE.Cells(ProcTxt.Row + 8, ActiveCell.Column) = LeituraAnterior
+                                                            WDMAE.Cells(ProcTxt.Row + 16, ActiveCell.Column) = DiversosRS
+                                                            WDMAE.Cells(ProcTxt.Row + 17, ActiveCell.Column) = AguaRS
+                                                            WDMAE.Cells(ProcTxt.Row + 18, ActiveCell.Column) = EsgotoRS
+                                                        Else
+                                                            If ProcTxt = "LJ 18 - Z. Lima Silva" Then
+                                        
+                                                                WDMAE.Cells(ProcTxt.Row + 4, ActiveCell.Column) = CDate(Format(DataEmissao, "dd/MM/yyyy"))
+                                                                WDMAE.Cells(ProcTxt.Row + 5, ActiveCell.Column) = CDate(Format(DataLeitura, "dd/MM/yyyy"))
+                                                                WDMAE.Cells(ProcTxt.Row + 6, ActiveCell.Column) = CDate(Format(DataVencimento, "dd/MM/yyyy"))
+                                                                WDMAE.Cells(ProcTxt.Row + 7, ActiveCell.Column) = LeituraAtual
+                                                                WDMAE.Cells(ProcTxt.Row + 8, ActiveCell.Column) = LeituraAnterior
+                                                                WDMAE.Cells(ProcTxt.Row + 19, ActiveCell.Column) = DiversosRS
+                                                                WDMAE.Cells(ProcTxt.Row + 20, ActiveCell.Column) = AguaRS
+                                                                WDMAE.Cells(ProcTxt.Row + 21, ActiveCell.Column) = EsgotoRS
+                                    
+                                                            Else
+                                                                If ProcTxt = "LJ 20 - BS Assis Brasil" Then
+                                                                    
+                                                                    WDMAE.Cells(ProcTxt.Row + 4, ActiveCell.Column) = CDate(Format(DataEmissao, "dd/MM/yyyy"))
+                                                                    WDMAE.Cells(ProcTxt.Row + 5, ActiveCell.Column) = CDate(Format(DataLeitura, "dd/MM/yyyy"))
+                                                                    WDMAE.Cells(ProcTxt.Row + 6, ActiveCell.Column) = CDate(Format(DataVencimento, "dd/MM/yyyy"))
+                                                                    WDMAE.Cells(ProcTxt.Row + 7, ActiveCell.Column) = LeituraAtual
+                                                                    WDMAE.Cells(ProcTxt.Row + 8, ActiveCell.Column) = LeituraAnterior
+                                                                    WDMAE.Cells(ProcTxt.Row + 19, ActiveCell.Column) = DiversosRS
+                                                                    WDMAE.Cells(ProcTxt.Row + 20, ActiveCell.Column) = AguaRS
+                                                                    WDMAE.Cells(ProcTxt.Row + 21, ActiveCell.Column) = EsgotoRS
+                                                                    
+                                                                Else
+                                                                    If ProcTxt = "LJ 29 - Z. Ipanema" Then
+                                                                    
+                                                                    WDMAE.Cells(ProcTxt.Row + 4, ActiveCell.Column) = CDate(Format(DataEmissao, "dd/MM/yyyy"))
+                                                                    WDMAE.Cells(ProcTxt.Row + 5, ActiveCell.Column) = CDate(Format(DataLeitura, "dd/MM/yyyy"))
+                                                                    WDMAE.Cells(ProcTxt.Row + 6, ActiveCell.Column) = CDate(Format(DataVencimento, "dd/MM/yyyy"))
+                                                                    WDMAE.Cells(ProcTxt.Row + 7, ActiveCell.Column) = LeituraAtual
+                                                                    WDMAE.Cells(ProcTxt.Row + 8, ActiveCell.Column) = LeituraAnterior
+                                                                    WDMAE.Cells(ProcTxt.Row + 19, ActiveCell.Column) = DiversosRS
+                                                                    WDMAE.Cells(ProcTxt.Row + 20, ActiveCell.Column) = AguaRS
+                                                                    WDMAE.Cells(ProcTxt.Row + 21, ActiveCell.Column) = EsgotoRS
+                                                                    
+                                                                    Else
+                                                                    
+                                                                        'Insere dados nas lojas com três fontes alternativa
+                                                                        If ProcTxt = "LJ 24 - BS Country" Then
+                                            
+                                                                            WDMAE.Cells(ProcTxt.Row + 4, ActiveCell.Column) = CDate(Format(DataEmissao, "dd/MM/yyyy"))
+                                                                            WDMAE.Cells(ProcTxt.Row + 5, ActiveCell.Column) = CDate(Format(DataLeitura, "dd/MM/yyyy"))
+                                                                            WDMAE.Cells(ProcTxt.Row + 6, ActiveCell.Column) = CDate(Format(DataVencimento, "dd/MM/yyyy"))
+                                                                            WDMAE.Cells(ProcTxt.Row + 8, ActiveCell.Column) = LeituraAtual
+                                                                            WDMAE.Cells(ProcTxt.Row + 9, ActiveCell.Column) = LeituraAnterior
+                                                                            WDMAE.Cells(ProcTxt.Row + 21, ActiveCell.Column) = DiversosRS
+                                                                            WDMAE.Cells(ProcTxt.Row + 22, ActiveCell.Column) = AguaRS
+                                                                            WDMAE.Cells(ProcTxt.Row + 23, ActiveCell.Column) = EsgotoRS
+                                            
+                                                                        Else
+                                                                
+                                                                            'Insere dados nas lojas com quatro fontes alternativa
+                                                                            If ProcTxt = "LJ 25 - BS Wallig" Then
+                                            
+                                                                                WDMAE.Cells(ProcTxt.Row + 4, ActiveCell.Column) = CDate(Format(DataEmissao, "dd/MM/yyyy"))
+                                                                                WDMAE.Cells(ProcTxt.Row + 5, ActiveCell.Column) = CDate(Format(DataLeitura, "dd/MM/yyyy"))
+                                                                                WDMAE.Cells(ProcTxt.Row + 6, ActiveCell.Column) = CDate(Format(DataVencimento, "dd/MM/yyyy"))
+                                                                                WDMAE.Cells(ProcTxt.Row + 8, ActiveCell.Column) = LeituraAtual
+                                                                                WDMAE.Cells(ProcTxt.Row + 9, ActiveCell.Column) = LeituraAnterior
+                                                                                WDMAE.Cells(ProcTxt.Row + 23, ActiveCell.Column) = DiversosRS
+                                                                                WDMAE.Cells(ProcTxt.Row + 24, ActiveCell.Column) = AguaRS
+                                                                                WDMAE.Cells(ProcTxt.Row + 25, ActiveCell.Column) = EsgotoRS
+                                                                    
+                                                                            Else
+                                                                    
+                                                                                'Insere dados nas lojas com sem fonte alternativa
+                                                                                WDMAE.Cells(ProcTxt.Row + 4, ActiveCell.Column) = CDate(Format(DataEmissao, "dd/MM/yyyy"))
+                                                                                WDMAE.Cells(ProcTxt.Row + 5, ActiveCell.Column) = CDate(Format(DataLeitura, "dd/MM/yyyy"))
+                                                                                WDMAE.Cells(ProcTxt.Row + 6, ActiveCell.Column) = CDate(Format(DataVencimento, "dd/MM/yyyy"))
+                                                                                WDMAE.Cells(ProcTxt.Row + 7, ActiveCell.Column) = LeituraAtual
+                                                                                WDMAE.Cells(ProcTxt.Row + 8, ActiveCell.Column) = LeituraAnterior
+                                                                                WDMAE.Cells(ProcTxt.Row + 14, ActiveCell.Column) = DiversosRS
+                                                                                WDMAE.Cells(ProcTxt.Row + 15, ActiveCell.Column) = AguaRS
+                                                                                WDMAE.Cells(ProcTxt.Row + 16, ActiveCell.Column) = EsgotoRS
+                                                                                
+                                                                            End If
+                                                                        End If
+                                                                    End If
+                                                                End If
+                                                            End If
+                                                        End If
+                                                    End If
+                                                End If
+                                            End If
+                                        End If
+                                    End If
+                                                                                   
+                                   
+                                    
+                                End If
+                        End If
+                 
+                 ActiveCell.Offset(0, 1).Select
+                 
+                 Loop
+           End If
+         
+                 WDMAE.Activate
+                 WDMAE.Range("A" & ActiveCell.Row).Activate
+                       
+     End If
+            
+            ActiveCell.Range("A1").Select
+      
+     
+End If
+If wsb.Range("U22") = "SAMAE" Then
+
+        WSAMAE.Activate
+        WSAMAE.Range("A8").Activate
+        WSAMAE.Range("A8").Select
+   'Cadastra dados da R3 no controle de dados
+   
+     If WSAMAE.Range("A8") <> "" Then
+       
+            Set ProcTxt = WSAMAE.Range("A:A").Find(NomeLoja)
+            
+            If Not ProcTxt Is Nothing Then
+               
+                Set UltcelWSAMAE = WSAMAE.Cells(WSAMAE.Rows.Count, 2).End(xlUp)
+                
+                Do While ActiveCell.Column <= UltColWSAMAE.Column
+                    
+                        If WDMAE.Cells(8, ActiveCell.Column).Value = Data Then
+                        
+                            If ProcTxt = "LJ 35 - Hiper São Pelegrino" Then
+                                
+                                WSAMAE.Cells(ProcTxt.Row + 4, ActiveCell.Column) = CDate(Format(DataEmissao, "dd/MM/yyyy"))
+                                WSAMAE.Cells(ProcTxt.Row + 6, ActiveCell.Column) = CDate(Format(DataLeitura, "dd/MM/yyyy"))
+                                WSAMAE.Cells(ProcTxt.Row + 17, ActiveCell.Column) = CDate(Format(DataVencimento, "dd/MM/yyyy"))
+                                WSAMAE.Cells(ProcTxt.Row + 7, ActiveCell.Column) = LeituraAtual
+                                WSAMAE.Cells(ProcTxt.Row + 8, ActiveCell.Column) = LeituraAnterior
+                                WSAMAE.Cells(ProcTxt.Row + 16, ActiveCell.Column) = DiversosRS
+                                WSAMAE.Cells(ProcTxt.Row + 10, ActiveCell.Column) = AguaRS
+                                WSAMAE.Cells(ProcTxt.Row + 12, ActiveCell.Column) = EsgotoRS
+                                
+                            Else
+                            
+                                WSAMAE.Cells(ProcTxt.Row + 4, ActiveCell.Column) = CDate(Format(DataEmissao, "dd/MM/yyyy"))
+                                WSAMAE.Cells(ProcTxt.Row + 6, ActiveCell.Column) = CDate(Format(DataLeitura, "dd/MM/yyyy"))
+                                WSAMAE.Cells(ProcTxt.Row + 14, ActiveCell.Column) = CDate(Format(DataVencimento, "dd/MM/yyyy"))
+                                WSAMAE.Cells(ProcTxt.Row + 7, ActiveCell.Column) = LeituraAtual
+                                WSAMAE.Cells(ProcTxt.Row + 8, ActiveCell.Column) = LeituraAnterior
+                                WSAMAE.Cells(ProcTxt.Row + 13, ActiveCell.Column) = DiversosRS
+                                WSAMAE.Cells(ProcTxt.Row + 10, ActiveCell.Column) = AguaRS
+                                WSAMAE.Cells(ProcTxt.Row + 12, ActiveCell.Column) = EsgotoRS
+                                
+                            End If
+                            
+                        End If
+                 
+                 ActiveCell.Offset(0, 1).Select
+                 
+                 Loop
+           End If
+         
+                 WSAMAE.Activate
+                 WSAMAE.Range("A" & ActiveCell.Row).Activate
+                       
+     End If
+            
+            ActiveCell.Range("A1").Select
+      
+     
+End If
+If wsb.Range("U22") = "CORSAN" Then
+
+        WCORSAN.Activate
+        WCORSAN.Range("A8").Activate
+        WCORSAN.Range("A8").Select
+   'Cadastra dados da R3 no controle de dados
+   
+     If WCORSAN.Range("A8") <> "" Then
+       
+            Set ProcTxt = WCORSAN.Range("A:A").Find(NomeLoja)
+            
+            If Not ProcTxt Is Nothing Then
+               
+                Set UltcelWCORSAN = WCORSAN.Cells(WCORSAN.Rows.Count, 2).End(xlUp)
+                
+                Do While ActiveCell.Column <= UltColWSAMAE.Column
+                    
+                        If WCORSAN.Cells(8, ActiveCell.Column).Value = Data Then
+                            
+                            If ProcTxt = "LJ 10 - Z. Passo Fundo" Then
+                            
+                                WCORSAN.Cells(ProcTxt.Row + 4, ActiveCell.Column) = CDate(Format(DataEmissao, "dd/MM/yyyy"))
+                                WCORSAN.Cells(ProcTxt.Row + 5, ActiveCell.Column) = CDate(Format(DataLeitura, "dd/MM/yyyy"))
+                                WCORSAN.Cells(ProcTxt.Row + 6, ActiveCell.Column) = CDate(Format(DataVencimento, "dd/MM/yyyy"))
+                                WCORSAN.Cells(ProcTxt.Row + 8, ActiveCell.Column) = LeituraAtual
+                                WCORSAN.Cells(ProcTxt.Row + 9, ActiveCell.Column) = LeituraAnterior
+                                WCORSAN.Cells(ProcTxt.Row + 21, ActiveCell.Column) = DiversosRS
+                                WCORSAN.Cells(ProcTxt.Row + 18, ActiveCell.Column) = AguaRS
+                                WCORSAN.Cells(ProcTxt.Row + 19, ActiveCell.Column) = EsgotoRS
+                                WCORSAN.Cells(ProcTxt.Row + 16, ActiveCell.Column) = SBCOM
+                                
+                            End If
+                            
+                            If ProcTxt = "LJ 12 - BS Canoas" Then
+                            
+                                WCORSAN.Cells(ProcTxt.Row + 5, ActiveCell.Column) = CDate(Format(DataEmissao, "dd/MM/yyyy"))
+                                WCORSAN.Cells(ProcTxt.Row + 6, ActiveCell.Column) = CDate(Format(DataLeitura, "dd/MM/yyyy"))
+                                WCORSAN.Cells(ProcTxt.Row + 7, ActiveCell.Column) = CDate(Format(DataVencimento, "dd/MM/yyyy"))
+                                WCORSAN.Cells(ProcTxt.Row + 9, ActiveCell.Column) = LeituraAtual
+                                WCORSAN.Cells(ProcTxt.Row + 10, ActiveCell.Column) = LeituraAnterior
+                                WCORSAN.Cells(ProcTxt.Row + 13, ActiveCell.Column) = COM
+                                WCORSAN.Cells(ProcTxt.Row + 14, ActiveCell.Column) = COM1
+                                WCORSAN.Cells(ProcTxt.Row + 21, ActiveCell.Column) = SBCOM
+                                WCORSAN.Cells(ProcTxt.Row + 22, ActiveCell.Column) = SBCOM1
+                                WCORSAN.Cells(ProcTxt.Row + 23, ActiveCell.Column) = SBECOM
+                                WCORSAN.Cells(ProcTxt.Row + 24, ActiveCell.Column) = SBECOM1
+                                WCORSAN.Cells(ProcTxt.Row + 25, ActiveCell.Column) = COMRS
+                                WCORSAN.Cells(ProcTxt.Row + 26, ActiveCell.Column) = COM1RS
+                                WCORSAN.Cells(ProcTxt.Row + 27, ActiveCell.Column) = ECOMRS
+                                WCORSAN.Cells(ProcTxt.Row + 28, ActiveCell.Column) = ECOM1RS
+                                WCORSAN.Cells(ProcTxt.Row + 30, ActiveCell.Column) = DiversosRS
+                                WCORSAN.Cells(ProcTxt.Row + 31, ActiveCell.Column) = -DESCAGUA
+                                WCORSAN.Cells(ProcTxt.Row + 32, ActiveCell.Column) = -DESCESGOTO
+                                WCORSAN.Cells(ProcTxt.Row + 33, ActiveCell.Column) = -DESCSB
+                                
+                            End If
+                            If ProcTxt = "LJ 21 - BS Passo Fundo" Then
+                            
+                                WCORSAN.Cells(ProcTxt.Row + 5, ActiveCell.Column) = CDate(Format(DataEmissao, "dd/MM/yyyy"))
+                                WCORSAN.Cells(ProcTxt.Row + 6, ActiveCell.Column) = CDate(Format(DataLeitura, "dd/MM/yyyy"))
+                                WCORSAN.Cells(ProcTxt.Row + 7, ActiveCell.Column) = CDate(Format(DataVencimento, "dd/MM/yyyy"))
+                                WCORSAN.Cells(ProcTxt.Row + 8, ActiveCell.Column) = LeituraAtual
+                                WCORSAN.Cells(ProcTxt.Row + 9, ActiveCell.Column) = LeituraAnterior
+                                WCORSAN.Cells(ProcTxt.Row + 12, ActiveCell.Column) = COM
+                                WCORSAN.Cells(ProcTxt.Row + 13, ActiveCell.Column) = COM1
+                                WCORSAN.Cells(ProcTxt.Row + 14, ActiveCell.Column) = IND
+                                WCORSAN.Cells(ProcTxt.Row + 18, ActiveCell.Column) = SBCOM
+                                WCORSAN.Cells(ProcTxt.Row + 19, ActiveCell.Column) = SBCOM1
+                                WCORSAN.Cells(ProcTxt.Row + 20, ActiveCell.Column) = SBIND
+                                WCORSAN.Cells(ProcTxt.Row + 21, ActiveCell.Column) = SBECOM
+                                WCORSAN.Cells(ProcTxt.Row + 22, ActiveCell.Column) = SBECOM1
+                                WCORSAN.Cells(ProcTxt.Row + 23, ActiveCell.Column) = SBEIND
+                                WCORSAN.Cells(ProcTxt.Row + 24, ActiveCell.Column) = COMRS
+                                WCORSAN.Cells(ProcTxt.Row + 25, ActiveCell.Column) = COM1RS
+                                WCORSAN.Cells(ProcTxt.Row + 26, ActiveCell.Column) = INDRS
+                                WCORSAN.Cells(ProcTxt.Row + 27, ActiveCell.Column) = ECOMRS
+                                WCORSAN.Cells(ProcTxt.Row + 28, ActiveCell.Column) = ECOM1RS
+                                WCORSAN.Cells(ProcTxt.Row + 29, ActiveCell.Column) = EINDRS
+                                WCORSAN.Cells(ProcTxt.Row + 31, ActiveCell.Column) = DiversosRS
+                                WCORSAN.Cells(ProcTxt.Row + 32, ActiveCell.Column) = -DESCAGUA
+                                WCORSAN.Cells(ProcTxt.Row + 33, ActiveCell.Column) = -DESCESGOTO
+                                WCORSAN.Cells(ProcTxt.Row + 34, ActiveCell.Column) = -DESCSB
+                                
+                            End If
+                        End If
+                 
+                 ActiveCell.Offset(0, 1).Select
+                 
+                 Loop
+           End If
+         
+                 WCORSAN.Activate
+                 WCORSAN.Range("A" & ActiveCell.Row).Activate
+                       
+     End If
+            
+            ActiveCell.Range("A1").Select
+      
+     
+End If
+
+If wsb.Range("U22") = "SEMAE" Then
+
+        WSEMAE.Activate
+        WSEMAE.Range("A6").Activate
+        WSEMAE.Range("A6").Select
+   'Cadastra dados da R3 no controle de dados
+   
+     If WSEMAE.Range("A6") <> "" Then
+       
+            Set ProcTxt = WSEMAE.Range("A:A").Find(NomeLoja)
+            
+            If Not ProcTxt Is Nothing Then
+               
+                Set UltcelWSEMAE = WSEMAE.Cells(WSEMAE.Rows.Count, 2).End(xlUp)
+                
+                Do While ActiveCell.Column <= UltColWSEMAE.Column
+                    
+                        If WSEMAE.Cells(5, ActiveCell.Column).Value = Data Then
+                            
+                            WSEMAE.Cells(ProcTxt.Row + 4, ActiveCell.Column) = CDate(Format(DataEmissao, "dd/MM/yyyy"))
+                            WSEMAE.Cells(ProcTxt.Row + 6, ActiveCell.Column) = CDate(Format(DataLeitura, "dd/MM/yyyy"))
+                            WSEMAE.Cells(ProcTxt.Row + 23, ActiveCell.Column) = CDate(Format(DataVencimento, "dd/MM/yyyy"))
+                            WSEMAE.Cells(ProcTxt.Row + 7, ActiveCell.Column) = LeituraAtual
+                            WSEMAE.Cells(ProcTxt.Row + 8, ActiveCell.Column) = LeituraAnterior
+                            WSEMAE.Cells(ProcTxt.Row + 22, ActiveCell.Column) = DiversosRS
+                            WSEMAE.Cells(ProcTxt.Row + 10, ActiveCell.Column) = AguaRS
+                            WSEMAE.Cells(ProcTxt.Row + 12, ActiveCell.Column) = EsgotoRS
+                            WSEMAE.Cells(ProcTxt.Row + 19, ActiveCell.Column) = ServBasicoAgua
+                            WSEMAE.Cells(ProcTxt.Row + 20, ActiveCell.Column) = ServBasicoEsgoto
+                            WSEMAE.Cells(ProcTxt.Row + 21, ActiveCell.Column) = ServADM
+                            
+                        End If
+                 
+                 ActiveCell.Offset(0, 1).Select
+                 
+                 Loop
+           End If
+         
+                 WSEMAE.Activate
+                 WSEMAE.Range("A" & ActiveCell.Row).Activate
+                       
+     End If
+            
+            ActiveCell.Range("A1").Select
+      
+     
+End If
+If wsb.Range("U22") = "COMUSA" Then
+
+        WCOMUSA.Activate
+        WCOMUSA.Range("A8").Activate
+        WCOMUSA.Range("A8").Select
+   'Cadastra dados da R3 no controle de dados
+   
+     If WCOMUSA.Range("A8") <> "" Then
+     
+          
+            Set ProcTxt = WCOMUSA.Range("A:A").Find(NomeLoja)
+            
+            If Not ProcTxt Is Nothing Then
+               
+                Set UltcelWCOMUSA = WCOMUSA.Cells(WCOMUSA.Rows.Count, 2).End(xlUp)
+                
+                Do While ActiveCell.Column <= UltColWSEMAE.Column
+                    
+                        If WCOMUSA.Cells(8, ActiveCell.Column).Value = Data Then
+                         
+                          If ProcTxt = "LJ 30 - B Novo Hamburgo" Then
+                            
+                            WCOMUSA.Cells(ProcTxt.Row + 4, ActiveCell.Column) = CDate(Format(DataEmissao, "dd/MM/yyyy"))
+                            WCOMUSA.Cells(ProcTxt.Row + 5, ActiveCell.Column) = CDate(Format(DataLeitura, "dd/MM/yyyy"))
+                            WCOMUSA.Cells(ProcTxt.Row + 20, ActiveCell.Column) = CDate(Format(DataVencimento, "dd/MM/yyyy"))
+                            WCOMUSA.Cells(ProcTxt.Row + 7, ActiveCell.Column) = LeituraAtual
+                            WCOMUSA.Cells(ProcTxt.Row + 8, ActiveCell.Column) = LeituraAnterior
+                            WCOMUSA.Cells(ProcTxt.Row + 19, ActiveCell.Column) = DiversosRS
+                            WCOMUSA.Cells(ProcTxt.Row + 11, ActiveCell.Column) = AguaRS
+                            WCOMUSA.Cells(ProcTxt.Row + 13, ActiveCell.Column) = EsgotoRS
+                            WCOMUSA.Cells(ProcTxt.Row + 9, ActiveCell.Column) = ServBasicoAgua
+                            WCOMUSA.Cells(ProcTxt.Row + 18, ActiveCell.Column) = PrecoBasico
+                            WCOMUSA.Cells(ProcTxt.Row + 6, ActiveCell.Column) = DataLeituraAnterior
+                          
+                          End If
+                          If ProcTxt = "Shopping NH" Then
+                            
+                            WCOMUSA.Cells(ProcTxt.Row + 4, ActiveCell.Column) = CDate(Format(DataEmissao, "dd/MM/yyyy"))
+                            WCOMUSA.Cells(ProcTxt.Row + 5, ActiveCell.Column) = CDate(Format(DataLeitura, "dd/MM/yyyy"))
+                            WCOMUSA.Cells(ProcTxt.Row + 22, ActiveCell.Column) = CDate(Format(DataVencimento, "dd/MM/yyyy"))
+                            WCOMUSA.Cells(ProcTxt.Row + 7, ActiveCell.Column) = LeituraAtual
+                            WCOMUSA.Cells(ProcTxt.Row + 8, ActiveCell.Column) = LeituraAnterior
+                            'WCOMUSA.Cells(ProcTxt.Row + 21, ActiveCell.Column) = DiversosRS
+                            WCOMUSA.Cells(ProcTxt.Row + 11, ActiveCell.Column) = AguaRS
+                            WCOMUSA.Cells(ProcTxt.Row + 13, ActiveCell.Column) = EsgotoRS
+                            WCOMUSA.Cells(ProcTxt.Row + 9, ActiveCell.Column) = ServBasicoAgua
+                            WCOMUSA.Cells(ProcTxt.Row + 20, ActiveCell.Column) = PrecoBasico
+                            WCOMUSA.Cells(ProcTxt.Row + 6, ActiveCell.Column) = DataLeituraAnterior
+                          
+                          End If
+                        End If
+                 
+                 ActiveCell.Offset(0, 1).Select
+                 
+                 Loop
+           End If
+         
+                 WCOMUSA.Activate
+                 WCOMUSA.Range("A" & ActiveCell.Row).Activate
+                       
+     End If
+            
+            ActiveCell.Range("A1").Select
+      
+     
+End If
+If wsb.Range("U22") = "SABESP" Then
+
+        WSABESP.Activate
+        WSABESP.Range("A8").Activate
+        WSABESP.Range("A8").Select
+   'Cadastra dados da R3 no controle de dados
+   
+     If WSABESP.Range("A8") <> "" Then
+       
+            Set ProcTxt = WSABESP.Range("A:A").Find(NomeLoja)
+            
+            If Not ProcTxt Is Nothing Then
+               
+            Set UltcelWSABESP = WSABESP.Cells(WSABESP.Rows.Count, 2).End(xlUp)
+                
+                Do While ActiveCell.Column <= UltColWSABESP.Column
+                    
+                    If WSABESP.Cells(8, ActiveCell.Column).Value = Data Then
+                        
+                           If ProcTxt = "Lj 100 - Híper São Paulo 1" Then
+                            
+                                WSABESP.Cells(ProcTxt.Row + 4, ActiveCell.Column) = CDate(Format(DataEmissao, "dd/MM/yyyy"))
+                                WSABESP.Cells(ProcTxt.Row + 6, ActiveCell.Column) = CDate(Format(DataLeitura, "dd/MM/yyyy"))
+                                WSABESP.Cells(ProcTxt.Row + 15, ActiveCell.Column) = CDate(Format(DataVencimento, "dd/MM/yyyy"))
+                                WSABESP.Cells(ProcTxt.Row + 14, ActiveCell.Column) = DiversosRS
+                                WSABESP.Cells(ProcTxt.Row + 8, ActiveCell.Column) = AguaRS
+                                WSABESP.Cells(ProcTxt.Row + 9, ActiveCell.Column) = EsgotoRS
+                                WSABESP.Cells(ProcTxt.Row + 11, ActiveCell.Column) = ServBasicoAgua
+                                WSABESP.Cells(ProcTxt.Row + 12, ActiveCell.Column) = ServBasicoEsgoto
+                                WSABESP.Cells(ProcTxt.Row + 13, ActiveCell.Column) = ServADM
+                                WSABESP.Cells(ProcTxt.Row + 7, ActiveCell.Column) = ConsumoM3
+                            End If
+                            
+                            If ProcTxt = "Lj 100 - Híper São Paulo 2" Then
+                            
+                                WSABESP.Cells(ProcTxt.Row + 5, ActiveCell.Column) = CDate(Format(DataEmissao, "dd/MM/yyyy"))
+                                WSABESP.Cells(ProcTxt.Row + 7, ActiveCell.Column) = CDate(Format(DataLeitura, "dd/MM/yyyy"))
+                                WSABESP.Cells(ProcTxt.Row + 16, ActiveCell.Column) = CDate(Format(DataVencimento, "dd/MM/yyyy"))
+                                WSABESP.Cells(ProcTxt.Row + 15, ActiveCell.Column) = DiversosRS
+                                WSABESP.Cells(ProcTxt.Row + 9, ActiveCell.Column) = AguaRS
+                                WSABESP.Cells(ProcTxt.Row + 11, ActiveCell.Column) = EsgotoRS
+                                WSABESP.Cells(ProcTxt.Row + 12, ActiveCell.Column) = ServBasicoAgua
+                                WSABESP.Cells(ProcTxt.Row + 13, ActiveCell.Column) = ServBasicoEsgoto
+                                WSABESP.Cells(ProcTxt.Row + 14, ActiveCell.Column) = ServADM
+                                WSABESP.Cells(ProcTxt.Row + 8, ActiveCell.Column) = ConsumoM3
+                            End If
+                            
+                            If ProcTxt = "CD SP - Ermano Marchetti" Then
+                            
+                                WSABESP.Cells(ProcTxt.Row + 5, ActiveCell.Column) = CDate(Format(DataEmissao, "dd/MM/yyyy"))
+                                WSABESP.Cells(ProcTxt.Row + 7, ActiveCell.Column) = CDate(Format(DataLeitura, "dd/MM/yyyy"))
+                                WSABESP.Cells(ProcTxt.Row + 18, ActiveCell.Column) = CDate(Format(DataVencimento, "dd/MM/yyyy"))
+                                WSABESP.Cells(ProcTxt.Row + 9, ActiveCell.Column) = LeituraAtual
+                                WSABESP.Cells(ProcTxt.Row + 10, ActiveCell.Column) = LeituraAnterior
+                                WSABESP.Cells(ProcTxt.Row + 17, ActiveCell.Column) = DiversosRS
+                                WSABESP.Cells(ProcTxt.Row + 12, ActiveCell.Column) = AguaRS
+                                WSABESP.Cells(ProcTxt.Row + 13, ActiveCell.Column) = EsgotoRS
+                                WSABESP.Cells(ProcTxt.Row + 14, ActiveCell.Column) = ServBasicoAgua
+                                WSABESP.Cells(ProcTxt.Row + 15, ActiveCell.Column) = ServBasicoEsgoto
+                                WSABESP.Cells(ProcTxt.Row + 16, ActiveCell.Column) = ServADM
+                                WSABESP.Cells(ProcTxt.Row + 8, ActiveCell.Column) = DataLeituraAnterior
+                            
+                            End If
+                            
+                            If ProcTxt = "Lj 101 - Morumbi" Then
+                            
+                                'WSABESP.Cells(ProcTxt.Row + 5, ActiveCell.Column) = CDate(Format(DataEmissao, "dd/MM/yyyy"))
+                                'WSABESP.Cells(ProcTxt.Row + 7, ActiveCell.Column) = CDate(Format(DataLeitura, "dd/MM/yyyy"))
+                                'WSABESP.Cells(ProcTxt.Row + 19, ActiveCell.Column) = CDate(Format(DataVencimento, "dd/MM/yyyy"))
+                                WSABESP.Cells(ProcTxt.Row + 9, ActiveCell.Column) = LeituraAtual
+                                WSABESP.Cells(ProcTxt.Row + 10, ActiveCell.Column) = LeituraAnterior
+                                WSABESP.Cells(ProcTxt.Row + 18, ActiveCell.Column) = DiversosRS
+                                WSABESP.Cells(ProcTxt.Row + 11, ActiveCell.Column) = ConsumoM3
+                                WSABESP.Cells(ProcTxt.Row + 14, ActiveCell.Column) = EsgotoRS
+                                WSABESP.Cells(ProcTxt.Row + 15, ActiveCell.Column) = ServBasicoAgua
+                                WSABESP.Cells(ProcTxt.Row + 16, ActiveCell.Column) = ServBasicoEsgoto
+                                WSABESP.Cells(ProcTxt.Row + 17, ActiveCell.Column) = ServADM
+                                'WSABESP.Cells(ProcTxt.Row + 8, ActiveCell.Column) = DataLeituraAnterior
+                            
+                            End If
+                    
+                    End If
+                    ActiveCell.Offset(0, 1).Select
+                Loop
+        
+     
+     
+                    WSEMAE.Activate
+                    WSEMAE.Range("A" & ActiveCell.Row).Activate
+                       
+                    
+            End If
+            ActiveCell.Range("A1").Select
+     End If
+     
+End If
+
+End Sub
+
